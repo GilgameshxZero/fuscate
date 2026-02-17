@@ -1,0 +1,45 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			/* Remove the intermediates directory obj/ and the output directory bin/. */
+			"type": "shell",
+			"label": "clean",
+			"options": { "cwd": "${workspaceFolder}/build" },
+			"presentation": { "clear": true, "reveal": "silent", "close": true },
+
+			"command": "make",
+			"args": ["clean"]
+		},
+		{
+			/* Build the open file in debug mode. */
+			"type": "shell",
+			"label": "build-debug-x64",
+			"options": { "cwd": "${workspaceFolder}/build" },
+			/* Reveal integrated terminal in view only on problem.
+			Terminals in editor will always be revealed. */
+			"presentation": { "clear": true, "reveal": "silent" },
+			"group": { "kind": "build", "isDefault": true },
+
+			"command": "make",
+			"args": ["BIN=${fileBasenameNoExtension}"],
+			"problemMatcher": ["$gcc"],
+			"windows": { "problemMatcher": ["$msCompile"] }
+		},
+		{
+			/* Build the open file in release mode. */
+			"type": "shell",
+			"label": "build-release-x64",
+			"options": { "cwd": "${workspaceFolder}/build" },
+			/* Reveal integrated terminal in view only on problem.
+			Terminals in editor will always be revealed. */
+			"presentation": { "clear": true, "reveal": "silent" },
+			"group": "build",
+
+			"command": "make",
+			"args": ["BIN=${fileBasenameNoExtension}", "BUILD=1"],
+			"problemMatcher": ["$gcc"],
+			"windows": { "problemMatcher": ["$msCompile"] }
+		}
+	]
+}

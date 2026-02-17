@@ -1,0 +1,38 @@
+// May require `sudo DevToolsSecurity -enable` on MacOS.
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "debug-x64",
+			"type": "lldb",
+			"request": "launch",
+			"preLaunchTask": "build-debug-x64",
+			"program": "${workspaceFolder}${pathSeparator}.bin${pathSeparator}${relativeFileDirname}${pathSeparator}${fileBasenameNoExtension}.debug.x64",
+			"cwd": "${workspaceFolder}${pathSeparator}.bin",
+			"console": "integratedTerminal",
+			"terminal": "integrated",
+			"internalConsoleOptions": "neverOpen",
+			"stopAtEntry": false,
+
+			"windows": {
+				"program": "${workspaceFolder}${pathSeparator}.bin${pathSeparator}${relativeFileDirname}${pathSeparator}${fileBasenameNoExtension}.debug.x64.exe"
+			}
+		},
+		{
+			"name": "release-x64",
+			"type": "lldb",
+			"request": "launch",
+			"preLaunchTask": "build-release-x64",
+			"program": "${workspaceFolder}${pathSeparator}.bin${pathSeparator}${relativeFileDirname}${pathSeparator}${fileBasenameNoExtension}.release.x64",
+			"cwd": "${workspaceFolder}${pathSeparator}.bin",
+			"console": "integratedTerminal",
+			"terminal": "integrated",
+			"internalConsoleOptions": "neverOpen",
+			"stopAtEntry": false,
+
+			"windows": {
+				"program": "${workspaceFolder}${pathSeparator}.bin${pathSeparator}${relativeFileDirname}${pathSeparator}${fileBasenameNoExtension}.release.x64.exe"
+			}
+		}
+	]
+}
