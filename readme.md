@@ -28,8 +28,8 @@ proto tcp
 
 ```bash
 --direction server
---in 127.0.0.1:80
---out 127.0.0.1:1194
+--listen 127.0.0.1:80
+--speak 127.0.0.1:1194
 --key ...
 ```
 
@@ -37,8 +37,8 @@ proto tcp
 
 ```bash
 --direction client
---in 127.0.0.1:4911
---out server.com:80
+--listen 127.0.0.1:4911
+--speak server.com:80
 --key ...
 ```
 
