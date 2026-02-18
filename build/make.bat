@@ -4,7 +4,7 @@ SETLOCAL ENABLEDELAYEDEXPANSION
 
 @REM Careful to not exceed the 8192 string limit.
 SET "INCL_PCH=..\rain\include\*"
-FOR /F "delims=" %%I IN ('DIR /B /S /AD ..\include ..\rain\include') DO (
+FOR /F "delims=" %%I IN ('DIR /B /S /AD ..\rain\include') DO (
 	SET "INCL_PCH=%%I\* !INCL_PCH!"
 )
 SET "INCL=%INCL_PCH% ..\include\*"

@@ -22,9 +22,9 @@
 			"group": { "kind": "build", "isDefault": true },
 
 			"command": "make",
-			"args": ["BIN=${fileBasenameNoExtension}"],
+			"args": ["-j8"],
 			"problemMatcher": ["$gcc"],
-			"windows": { "problemMatcher": ["$msCompile"] }
+			"windows": { "args": [], "problemMatcher": ["$msCompile"] }
 		},
 		{
 			/* Build the open file in release mode. */
@@ -37,9 +37,9 @@
 			"group": "build",
 
 			"command": "make",
-			"args": ["BIN=${fileBasenameNoExtension}", "BUILD=1"],
+			"args": ["-j8", "BUILD=1"],
 			"problemMatcher": ["$gcc"],
-			"windows": { "problemMatcher": ["$msCompile"] }
+			"windows": { "args": ["BUILD=1"], "problemMatcher": ["$msCompile"] }
 		}
 	]
 }

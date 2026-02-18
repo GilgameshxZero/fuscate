@@ -7,7 +7,7 @@
 			"type": "lldb",
 			"request": "launch",
 			"preLaunchTask": "build-debug-x64",
-			"program": "${workspaceFolder}${pathSeparator}.bin${pathSeparator}${relativeFileDirname}${pathSeparator}${fileBasenameNoExtension}.debug.x64",
+			"program": "${workspaceFolder}${pathSeparator}.bin${pathSeparator}src${pathSeparator}fuscate.debug.x64",
 			"cwd": "${workspaceFolder}${pathSeparator}.bin",
 			"console": "integratedTerminal",
 			"terminal": "integrated",
@@ -15,7 +15,7 @@
 			"stopAtEntry": false,
 
 			"windows": {
-				"program": "${workspaceFolder}${pathSeparator}.bin${pathSeparator}${relativeFileDirname}${pathSeparator}${fileBasenameNoExtension}.debug.x64.exe"
+				"program": "${workspaceFolder}${pathSeparator}.bin${pathSeparator}src${pathSeparator}fuscate.debug.x64.exe"
 			}
 		},
 		{
@@ -23,7 +23,7 @@
 			"type": "lldb",
 			"request": "launch",
 			"preLaunchTask": "build-release-x64",
-			"program": "${workspaceFolder}${pathSeparator}.bin${pathSeparator}${relativeFileDirname}${pathSeparator}${fileBasenameNoExtension}.release.x64",
+			"program": "${workspaceFolder}${pathSeparator}.bin${pathSeparator}src${pathSeparator}fuscate.release.x64",
 			"cwd": "${workspaceFolder}${pathSeparator}.bin",
 			"console": "integratedTerminal",
 			"terminal": "integrated",
@@ -31,7 +31,7 @@
 			"stopAtEntry": false,
 
 			"windows": {
-				"program": "${workspaceFolder}${pathSeparator}.bin${pathSeparator}${relativeFileDirname}${pathSeparator}${fileBasenameNoExtension}.release.x64.exe"
+				"program": "${workspaceFolder}${pathSeparator}.bin${pathSeparator}src${pathSeparator}fuscate.release.x64.exe"
 			}
 		}
 	]

@@ -1,35 +1,44 @@
 # GNU make (gmake) & nmake shared makefile.
-# Conditional logic implemented with differing end-of-line comment syntax.
-# To enable multithreaded compilation, nmake compiles all files together with
-# 	/MP, while gmake compiles separately with -jN.
+# Conditional logic implemented with differing end-of-line
+# comment syntax.
+# To enable multithreaded compilation, nmake compiles all
+# files together with
+# 	/MP, while gmake compiles automatically with -jN.
 # Files are pre-compiled with pch.cpp.
+# TODO: Windows does not yet support project
+# sub-directories in its wildcards.
 
 # Variables:
-# PROJ: a repository can have multiple *project*s, each in their own directory.
+# PROJ: a repository can have multiple *project*s, each in
+# 	their own directory.
 # BIN: name of the project; a project may have multiple.
-# SRC: target filenames (can be multiple) to link, starting from the project
-# 	directory.
-# BUILD: 0 (default), 1, or 2, specifying the type of build (debug, release,
-# 	instrument).
-# ARCH: 64 (default) or 86, specifying the architecture to build for. The
-# 	environment may need to be initialized accordingly (e.g. for cl.exe).
-# PCH: 0 or 1 (default), whether or not to use precompiled pch.cpp. Always 0 on
-# 	non-Windows.
-# ARGS: command-line arguments to pass to the executable to be run.
-# INCL: set from caller on Windows, enumerates header file directory wildcards.
+# SRC: target filenames (can be multiple) to link, starting
+# 	from the project directory.
+# BUILD: 0 (default), 1, or 2, specifying the type of build
+# 	(debug, release, instrument).
+# ARCH: 64 (default) or 86, specifying the architecture to
+# 	build for. The environment may need to be initialized
+# 	accordingly (e.g. for cl.exe).
+# PCH: 0 or 1 (default), whether or not to use precompiled
+# 	pch.cpp. Always 0 on non-Windows.
+# ARGS: command-line arguments to pass to the executable to
+# 	be run.
+# INCL: set from caller on Windows, enumerates header file
+# 	directory wildcards.
 
 # Targets:
 # build (default): compile & link.
 # run: compile, link, and run.
 # clean: remove intermediates directory.
+# view: print select makefile variables and exit.
 
 # Default target defined before any "fake" targets.
 __default: _default
 
-# ------------------------------------------------------------------------------
+# ----------------------------------------------------------
 ifdef MAKEDIR: # gmake: false; nmake: unused target
 !ifdef MAKEDIR # gmake: not seen; nmake: true
-# ------------------------------------------------------------------------------
+# ----------------------------------------------------------
 
 # nmake specific commands.
 ROOT_DIR = $(MAKEDIR)\..^\
@@ -41,8 +50,8 @@ PROJ_NAME = $(PROJ)
 !IFNDEF BIN
 !IFNDEF SRC
 BIN = $(REPO_NAME)
-# This will include all *.cpp* directories as well. In this case, name
-# directories as *.cpp.assets.
+# This will include all *.cpp* directories as well. In this
+# case, name directories as *.cpp.assets.
 SRC = *.cpp
 !ELSE
 BIN = $(patsubsti %.cpp,%,$(SRC))
@@ -71,8 +80,8 @@ ARCH = 64
 PCH = 1
 !ENDIF
 
-# The directory structure here must be consistent with macro substitution
-# structure utilized later.
+# The directory structure here must be consistent with
+# macro substitution structure utilized later.
 BIN_DIR = $(ROOT_DIR).bin^\
 PROJ_BIN = $(BIN_DIR)$(PROJ_NAME)\$(BIN_NAME).$(BUILD_NAME).x$(ARCH).exe
 PROJ_BIN_DIR = $(BIN_DIR)$(PROJ_NAME)^\
@@ -207,139 +216,158 @@ $(PROJ_BIN): $(PROJ_SRC)
 $(PROJ_SRC): $(INCL) pch.cpp
 	@EXIT
 
-# ------------------------------------------------------------------------------
+# ----------------------------------------------------------
 !else
 else
-# ------------------------------------------------------------------------------
+# ----------------------------------------------------------
 
 # GNU make (gmake) specific commands.
 # Second expansion for stem matching syntax.
 .SECONDEXPANSION:
 # For usage of bash commands like `read`.
-SHELL := /bin/bash
-# For recursive dependency listing.
+SHELL:=/bin/bash
+# For recursive dependency listing. Directories must end
+# with /.
 rwildcard=$(foreach d,\
-	$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(subst *,%,$2),$d))
+	$(wildcard $(1:%=%*)),\
+	$(filter $(subst *,%,$2),$d) $(call rwildcard,$d/,$2))
 
-ROOT_DIR := ../
-REPO_NAME := fuscate
-PROJ ?= src
-PROJ_NAME := $(PROJ)
+ROOT_DIR:=../
+REPO_NAME:=fuscate
+PROJ?=src
+PROJ_NAME:=$(PROJ)
 ifndef BIN
 ifndef SRC
-BIN := $(REPO_NAME)
-SRC := *.cpp
+BIN:=$(REPO_NAME)
+SRC:=*.cpp
 else
-BIN := $(patsubst .cpp,,$(SRC))
+BIN:=$(patsubst .cpp,,$(SRC))
 endif
 else
-SRC := $(BIN).cpp
+SRC:=$(BIN).cpp
 endif
-BIN_NAME := $(BIN)
-SRC_NAME := $(SRC)
-BUILD ?= 0
-ifeq ($(BUILD), 2)
-BUILD_NAME := instrument
-else ifeq ($(BUILD), 1)
-BUILD_NAME := release
+BIN_NAME:=$(BIN)
+SRC_NAME:=$(SRC)
+BUILD?=0
+ifeq ($(BUILD),2)
+BUILD_NAME:=instrument
+else ifeq ($(BUILD),1)
+BUILD_NAME:=release
 else
-BUILD_NAME := debug
+BUILD_NAME:=debug
 endif
-ARCH ?= 64
+ARCH?=64
 # PCH is not yet supported on non-Windows systems.
-PCH := 0
+PCH:=0
 
-INCL := $(call rwildcard,$(ROOT_DIR)rain/include,*.hpp) $(call rwildcard,$(ROOT_DIR)include,*.hpp)
+INCL:=$(call rwildcard,$(ROOT_DIR)rain/include/,*.hpp)\
+	$(call rwildcard,$(ROOT_DIR)include/,*.hpp)
 
-BIN_DIR := $(ROOT_DIR).bin/
-PROJ_BIN := $(BIN_DIR)$(PROJ_NAME)/$(BIN_NAME).$(BUILD_NAME).x$(ARCH)
-PROJ_BIN_DIR := $(BIN_DIR)$(PROJ_NAME)/
-OBJ_DIR := $(ROOT_DIR).obj/
-PROJ_OBJ_DIR := $(OBJ_DIR)$(PROJ_NAME)/
-PROJ_SRC_DIR := $(ROOT_DIR)$(PROJ_NAME)/
-PROJ_SRC = $(patsubst %,$(PROJ_SRC_DIR)%,$(SRC_NAME))
+BIN_DIR:=$(ROOT_DIR).bin/
+PROJ_BIN:=$(BIN_DIR)$(PROJ_NAME)/$(BIN_NAME).$(BUILD_NAME).x$(ARCH)
+PROJ_BIN_DIR:= (BIN_DIR)$(PROJ_NAME)/
+OBJ_DIR:=$(ROOT_DIR).obj/
+PROJ_OBJ_DIR:=$(OBJ_DIR)$(PROJ_NAME)/
+PROJ_SRC_DIR:=$(ROOT_DIR)$(PROJ_NAME)/
+ifeq ($(SRC_NAME),*.cpp)
+PROJ_SRC:=$(call rwildcard,$(PROJ_SRC_DIR),*.cpp)
+else
+PROJ_SRC:=$(patsubst %,$(PROJ_SRC_DIR)%,$(SRC_NAME))
+endif
 
-COMPILER ?= clang++
-COMPILER_FLAGS_INCLUDES := -I$(ROOT_DIR)rain/include -I$(ROOT_DIR)include
-COMPILER_FLAGS_COMMON := $(COMPILER_FLAGS_INCLUDES) -std=c++20 -pthread\
+COMPILER?=clang++
+COMPILER_FLAGS_INCLUDES:=-I$(ROOT_DIR)rain/include\
+	-I$(ROOT_DIR)include
+COMPILER_FLAGS_COMMON:=$(COMPILER_FLAGS_INCLUDES)\
+	-std=c++20 -pthread\
 	-Wall -Wextra -D_CONSOLE -masm=intel
-COMPILER_FLAGS_DEBUG := -D _DEBUG -g -O0
-COMPILER_FLAGS_RELEASE := -D NDEBUG -O3 -ffast-math
-COMPILER_FLAGS_INSTRUMENT := $(COMPILER_FLAGS_DEBUG) /Fa$(PROJ_OBJ_DIR)
-COMPILER_FLAGS_64 := -m64
-COMPILER_FLAGS_86 := -m32
+COMPILER_FLAGS_DEBUG:=-D _DEBUG -g -O0
+COMPILER_FLAGS_RELEASE:=-D NDEBUG -O3 -ffast-math
+COMPILER_FLAGS_INSTRUMENT:=$(COMPILER_FLAGS_DEBUG)\
+	/Fa$(PROJ_OBJ_DIR)
+COMPILER_FLAGS_64:=-m64
+COMPILER_FLAGS_86:=-m32
 
-LINKER := $(COMPILER)
-LINKER_FLAGS_LIBRARIES := -pthread -lresolv
-LINKER_FLAGS_COMMON := $(LINKER_FLAGS_LIBRARIES)
-LINKER_FLAGS_DEBUG :=
-LINKER_FLAGS_RELEASE :=
-LINKER_FLAGS_INSTRUMENT := $(LINKER_FLAGS_DEBUG)\
+LINKER:=$(COMPILER)
+LINKER_FLAGS_LIBRARIES:=-pthread -lresolv
+LINKER_FLAGS_COMMON:=$(LINKER_FLAGS_LIBRARIES)
+LINKER_FLAGS_DEBUG:=
+LINKER_FLAGS_RELEASE:=
+LINKER_FLAGS_INSTRUMENT:=$(LINKER_FLAGS_DEBUG)\
 	-fsanitize=address,undefined,leak
-LINKER_FLAGS_64 := -m64
-LINKER_FLAGS_86 := -m32
+LINKER_FLAGS_64:=-m64
+LINKER_FLAGS_86:=-m32
 
-# -lstdc++fs is neither available nor required on typical MacOS C++ compiler
-# implementations.
-ifneq ($(shell uname -s), Darwin)
-	LINKER_FLAGS_LIBRARIES := $(LINKER_FLAGS_LIBRARIES) -lstdc++fs
+# -lstdc++fs is neither available nor required on typical
+# MacOS C++ compiler implementations.
+ifneq ($(OS),Darwin)
+	LINKER_FLAGS_LIBRARIES:=$(LINKER_FLAGS_LIBRARIES)\
+		-lstdc++fs
 endif
 
-ifeq ($(BUILD_NAME), instrument)
-	COMPILER_FLAGS := $(COMPILER_FLAGS_COMMON) $(COMPILER_FLAGS_INSTRUMENT)
-	LINKER_FLAGS := $(LINKER_FLAGS_COMMON) $(LINKER_FLAGS_INSTRUMENT)
-else ifeq ($(BUILD_NAME), release)
-	COMPILER_FLAGS := $(COMPILER_FLAGS_COMMON) $(COMPILER_FLAGS_RELEASE)
-	LINKER_FLAGS := $(LINKER_FLAGS_COMMON) $(LINKER_FLAGS_RELEASE)
+ifeq ($(BUILD_NAME),instrument)
+	COMPILER_FLAGS:=$(COMPILER_FLAGS_COMMON)\
+		$(COMPILER_FLAGS_INSTRUMENT)
+	LINKER_FLAGS:=$(LINKER_FLAGS_COMMON)\
+		$(LINKER_FLAGS_INSTRUMENT)
+else ifeq ($(BUILD_NAME),release)
+	COMPILER_FLAGS:=$(COMPILER_FLAGS_COMMON)\
+		$(COMPILER_FLAGS_RELEASE)
+	LINKER_FLAGS:=$(LINKER_FLAGS_COMMON)\
+		$(LINKER_FLAGS_RELEASE)
 else
-	COMPILER_FLAGS := $(COMPILER_FLAGS_COMMON) $(COMPILER_FLAGS_DEBUG)
-	LINKER_FLAGS := $(LINKER_FLAGS_COMMON) $(LINKER_FLAGS_DEBUG)
+	COMPILER_FLAGS:=$(COMPILER_FLAGS_COMMON)\
+		$(COMPILER_FLAGS_DEBUG)
+	LINKER_FLAGS:=$(LINKER_FLAGS_COMMON) $(LINKER_FLAGS_DEBUG)
 endif
 
-ifeq ($(ARCH), 86)
-	COMPILER_FLAGS := $(COMPILER_FLAGS) $(COMPILER_FLAGS_86)
-	LINKER_FLAGS := $(LINKER_FLAGS) $(LINKER_FLAGS_86)
+ifeq ($(ARCH),86)
+	COMPILER_FLAGS:=$(COMPILER_FLAGS) $(COMPILER_FLAGS_86)
+	LINKER_FLAGS:=$(LINKER_FLAGS) $(LINKER_FLAGS_86)
 else
-	COMPILER_FLAGS := $(COMPILER_FLAGS) $(COMPILER_FLAGS_64)
-	LINKER_FLAGS := $(LINKER_FLAGS) $(LINKER_FLAGS_64)
+	COMPILER_FLAGS:=$(COMPILER_FLAGS) $(COMPILER_FLAGS_64)
+	LINKER_FLAGS:=$(LINKER_FLAGS) $(LINKER_FLAGS_64)
 endif
 
-# Unlike `nmake`, `gmake` first compiles all the relevant obj files, then
-# compiles the relevant binaries.
+# Unlike `nmake`, `gmake` first compiles all the relevant
+# obj files, then compiles the relevant binaries.
 # Keep intermediate and output files.
-# Introduce list of project object intermediates parsed from the source
-# directory with SRC_NAME.
-PROJ_OBJ := $(foreach s, $(SRC_NAME),\
-	$(addprefix $(PROJ_OBJ_DIR)$(BUILD_NAME)/x$(ARCH)/, $(addsuffix .o,\
-	$(basename $(notdir $(wildcard $(PROJ_SRC_DIR)$(s)))))))
-.SECONDARY: $(PROJ_BIN) $(PROJ_OBJ)
+# Introduce list of project object intermediates parsed
+# from the source directory with SRC_NAME.
+PROJ_OBJ:=$(foreach s,$(PROJ_SRC),\
+	$(addprefix $(PROJ_OBJ_DIR)$(BUILD_NAME)/x$(ARCH)/,\
+		$(addsuffix .o,\
+			$(s:$(PROJ_SRC_DIR)%.cpp=%))))
+.SECONDARY:$(PROJ_BIN) $(PROJ_OBJ)
 
-# Ensure files with the same name as fake targets do not trigger.
-.PHONY: __default _default build run clean tests
+# Ensure files with the same name as fake targets do not
+# trigger.
+.PHONY: __default _default build run clean view
 _default: build
 build: version.build.txt $(PROJ_BIN)
 run: build
 	@echo ---------------- [Run] $(BIN_NAME) ----------------
-	@cd $(PROJ_BIN_DIR) && ./$(BIN_NAME).$(BUILD_NAME).x$(ARCH) $(ARGS)
+	@cd $(PROJ_BIN_DIR) &&\
+		./$(BIN_NAME).$(BUILD_NAME).x$(ARCH) $(ARGS)
 clean:
 	@echo Cleaning...
 	@rm -rf $(OBJ_DIR) $(BIN_DIR)
-# No MAKEFLAGS because passing -j8 causes warning.
-tests: version.build.txt
-	@for i in $(PROJ_SRC_DIR)*.cpp; do\
-		echo ---------------- [Build] $$(basename $$i .cpp) ----------------;\
-		$(MAKE) --no-print-directory -s build BIN=$$(basename $$i .cpp) BUILD=$(BUILD) ARCH=$(ARCH) PCH=$(PCH) || exit;\
-	done
-	@for i in $(PROJ_SRC_DIR)*.cpp; do\
-		$(MAKE) --no-print-directory -s run BIN=$$(basename $$i .cpp) BUILD=$(BUILD) ARCH=$(ARCH) PCH=$(PCH) || exit;\
-	done
+view:
+	@echo MAKEFLAGS=$(MAKEFLAGS)
+	@echo SRC_NAME=$(SRC_NAME)
+	@echo PROJ_SRC=$(PROJ_SRC)
+	@echo PROJ_OBJ=$(PROJ_OBJ)
+	@echo COMPILER_FLAGS=$(COMPILER_FLAGS)
+	@echo LINKER_FLAGS=$(LINKER_FLAGS)
 
 version.build.txt: $(INCL) $(PROJ_SRC)
 	@for i in $?; do echo Outdated: $$i.;\
 	done
-	@./version.sh $(shell echo $(REPO_NAME) | tr '[:lower:]' '[:upper:]')
+	@./version.sh $(shell \
+		echo $(REPO_NAME) | tr '[:lower:]' '[:upper:]')
 
-# Compile rule. The first line includes all header dependencies.
+# Compile rule. The first line includes all header
+# dependencies.
 # Stem % matches source file name.
 $(PROJ_OBJ): $(INCL)
 $(PROJ_OBJ): $(PROJ_OBJ_DIR)$(BUILD_NAME)/x$(ARCH)/%.o : $(PROJ_SRC_DIR)$$*.cpp
@@ -353,7 +381,7 @@ $(PROJ_BIN): $(BIN_DIR)% : $(PROJ_OBJ)
 	@echo Linking $@...
 	@$(LINKER) $(PROJ_OBJ) $(LINKER_FLAGS) -o $@
 
-# ------------------------------------------------------------------------------
+# ----------------------------------------------------------
 endif    # gmake: close condition; nmake: not seen
 !endif : # gmake: unused target; nmake close conditional
-# ------------------------------------------------------------------------------
+# ----------------------------------------------------------
