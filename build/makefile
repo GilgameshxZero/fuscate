@@ -20,7 +20,7 @@
 # 	build for. The environment may need to be initialized
 # 	accordingly (e.g. for cl.exe).
 # PCH: 0 or 1 (default), whether or not to use precompiled
-# 	pch.cpp. Always 0 on non-Windows.
+# 	pch.cpp.
 # ARGS: command-line arguments to pass to the executable to
 # 	be run.
 # INCL: set from caller on Windows, enumerates header file
@@ -330,8 +330,7 @@ else
 BUILD_NAME:=debug
 endif
 ARCH?=64
-# PCH is not yet supported on non-Windows systems.
-PCH:=0
+PCH?=1
 
 INCL_PCH:=$(call rwildcard,$(ROOT_DIR)rain/include/,*.hpp)
 INCL:=$(INCL_PCH)\
@@ -402,6 +401,14 @@ else
 	COMPILER_FLAGS:=$(COMPILER_FLAGS) $(COMPILER_FLAGS_64)
 	LINKER_FLAGS:=$(LINKER_FLAGS) $(LINKER_FLAGS_64)
 endif
+ifeq ($(PCH),1)
+	PCH_PCH=$(PROJ_OBJ_DIR)$(BUILD_NAME)/x$(ARCH)/pch.pch
+	COMPILER_FLAGS_PCH=-include-pch\
+		$(PROJ_OBJ_DIR)$(BUILD_NAME)/x$(ARCH)/pch.pch
+else
+	PCH_PCH=
+	COMPILER_FLAGS_PCH=
+endif
 
 # Unlike `nmake`, `gmake` first compiles all the relevant
 # obj files, then compiles the relevant binaries.
@@ -429,7 +436,7 @@ clean:
 info:
 	@echo INCL_PCH=$(INCL_PCH)
 	@echo INCL=$(INCL)
-	@ECHO PROJ_SRC_WC=$(PROJ_SRC_WC)
+	@echo PROJ_SRC_WC=$(PROJ_SRC_WC)
 	@echo MAKEFLAGS=$(MAKEFLAGS)
 	@echo BIN_NAME=$(BIN_NAME)
 	@echo SRC_NAME=$(SRC_NAME)
@@ -446,15 +453,21 @@ version.build.txt: $(INCL) $(PROJ_SRC)
 	done
 	@./version.sh $(shell \
 		echo $(REPO_NAME) | tr '[:lower:]' '[:upper:]')
+$(PROJ_OBJ_DIR)$(BUILD_NAME)/x$(ARCH)/pch.pch: pch.cpp
+	@echo Building $@...
+	@mkdir -p $(PROJ_OBJ_DIR)$(BUILD_NAME)/x$(ARCH)
+	@$(COMPILER) $(COMPILER_FLAGS) -xc++-header pch.cpp -o $@
+pch.cpp: $(INCL_PCH)
 
 # Compile rule. The first line includes all header
 # dependencies.
 # Stem % matches source file name.
-$(PROJ_OBJ): $(INCL)
+$(PROJ_OBJ): $(INCL) $(PCH_PCH)
 $(PROJ_OBJ): $(PROJ_OBJ_DIR)$(BUILD_NAME)/x$(ARCH)/%.o : $(PROJ_SRC_DIR)$$*.cpp
 	@mkdir -p $(@D)
 	@echo Building $@...
-	@$(COMPILER) $(COMPILER_FLAGS) -c $< -o $@
+	@$(COMPILER) $(COMPILER_FLAGS) $(COMPILER_FLAGS_PCH)\
+		-c $< -o $@
 
 # Link rule.
 $(PROJ_BIN): $(BIN_DIR)% : $(PROJ_OBJ)
