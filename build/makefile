@@ -4,9 +4,9 @@
 # To enable multithreaded compilation, nmake compiles all
 # files together with
 # 	/MP, while gmake compiles automatically with -jN.
-# Files are pre-compiled with pch.cpp.
-# TODO: Windows does not yet support project
-# sub-directories in its wildcards.
+# Files are pre-compiled with pch.cpp. Reference
+# <https://gist.github.com/Prince-Mandor/ee16968da4707fb3705eb39b326bdb02>
+# for batch variable wrangling.
 
 # Variables:
 # PROJ: a repository can have multiple *project*s, each in
