@@ -219,7 +219,7 @@ $(PROJ_OBJ_DIR)$(BUILD_NAME)\x$(ARCH)\pch.pch: pch.cpp
 		/Fo$(PROJ_OBJ_DIR)$(BUILD_NAME)\x$(ARCH)\pch.obj pch.cpp
 pch.cpp: $(INCL_PCH)
 
-# Build target.
+# Binary build target.
 # First compile all outdated files (with /MP), then link
 # everything together.
 # Need additional variable to parse dependencies correctly.
@@ -227,12 +227,8 @@ $(PROJ_BIN): $(PROJ_SRC)
 !IF $(PCH)==1
 	@$(MAKE) /C\
 		$(PROJ_OBJ_DIR)$(BUILD_NAME)\x$(ARCH)\pch.pch\
-		PROJ=$(PROJ)\
-		BIN=$(BIN)\
-		SRC="$(SRC)"\
-		BUILD=$(BUILD)\
-		ARCH=$(ARCH)\
-		PCH=$(PCH)
+		PROJ=$(PROJ) BIN=$(BIN) SRC="$(SRC)"\
+		BUILD=$(BUILD) ARCH=$(ARCH) PCH=$(PCH)
 !ENDIF
 	@ECHO ---------------- [Build] $(BIN_NAME) ----------------
 	@IF NOT EXIST $(PROJ_BIN_DIR) MD $(PROJ_BIN_DIR)
@@ -257,24 +253,19 @@ $(PROJ_BIN): $(PROJ_SRC)
 	@REM project source root.
 	@REM The else case exploits behavior that we can use ..\
 	@REM to ignore the last part of a path in `MD`.
-	@FOR %%I IN ($(patsubsti %*.cpp,"%",\
-		$(patsubsti $(PROJ_SRC_DIR)\%,%,$(PROJ_SRC)))) DO\
-		@IF "%%~xI" NEQ ".cpp" (\
-			(IF NOT EXIST $(PROJ_OBJ_DIR)$(BUILD_NAME)\x$(ARCH)\%%~I\
-				MD $(PROJ_OBJ_DIR)$(BUILD_NAME)\x$(ARCH)\%%~I ) &&\
-			ECHO Building subdirectory $(PROJ_SRC_DIR)%%~I*.cpp... &&\
-			$(COMPILER) $(COMPILER_FLAGS) $(COMPILER_FLAGS_PCH)\
-				/Fd$(PROJ_OBJ_DIR)$(BUILD_NAME)\x$(ARCH)\$(BIN_NAME).pdb\
-				/Fo$(PROJ_OBJ_DIR)$(BUILD_NAME)\x$(ARCH)\%%~I \
-				$(PROJ_SRC_DIR)%%~I*.cpp\
+	@FOR %%I IN ($(patsubsti %*.obj,"%",\
+		$(patsubsti %.cpp,%.obj,\
+			$(patsubsti $(PROJ_SRC_DIR)\%,%,$(PROJ_SRC))))) DO\
+		@IF "%%~xI" NEQ ".obj" (\
+			$(MAKE) /C $(PROJ_OBJ_DIR)$(BUILD_NAME)\x$(ARCH)\%%~I.sentinel.tmp\
+				WINDOWS_INNER_ARG=%%~I\
+				PROJ=$(PROJ) BIN=$(BIN) SRC="$(SRC)"\
+				BUILD=$(BUILD) ARCH=$(ARCH) PCH=$(PCH)\
 		) ELSE (\
-			(IF NOT EXIST $(PROJ_OBJ_DIR)$(BUILD_NAME)\x$(ARCH)\%%I\..\
-				MD $(PROJ_OBJ_DIR)$(BUILD_NAME)\x$(ARCH)\%%I..\ ) &&\
-			ECHO Building file $(PROJ_SRC_DIR)%%I... &&\
-			$(COMPILER) $(COMPILER_FLAGS) $(COMPILER_FLAGS_PCH)\
-				/Fd$(PROJ_OBJ_DIR)$(BUILD_NAME)\x$(ARCH)\$(BIN_NAME).pdb\
-				/Fo$(PROJ_OBJ_DIR)$(BUILD_NAME)\x$(ARCH)\%%I\..\ \
-				$(PROJ_SRC_DIR)%%~I\
+			$(MAKE) /C $(PROJ_OBJ_DIR)$(BUILD_NAME)\x$(ARCH)\%%~I\
+				WINDOWS_INNER_ARG=%%~I\
+				PROJ=$(PROJ) BIN=$(BIN) SRC="$(SRC)"\
+				BUILD=$(BUILD) ARCH=$(ARCH) PCH=$(PCH)\
 		)
 	@ECHO Linking $(PROJ_BIN)...
 	@$(LINKER) $(LINKER_FLAGS) $(LINKER_FLAGS_PCH)\
@@ -282,6 +273,26 @@ $(PROJ_BIN): $(PROJ_SRC)
 		$(patsubsti $(PROJ_SRC_DIR)\%,\
 			$(PROJ_OBJ_DIR)$(BUILD_NAME)\x$(ARCH)\\%,\
 			$**))
+
+# Secondary build target for subdirectories. We are able to use nmake macros again via the recursive call, and also avoid rebuilding unchanged source files.
+# Use a sentinel in the .obj directory to mark the directory as up-to-date. Without the sentinel and using a fake target instead, all dependents are considered out of date.
+$(PROJ_OBJ_DIR)$(BUILD_NAME)\x$(ARCH)\$(WINDOWS_INNER_ARG).sentinel.tmp: $(PROJ_SRC_DIR)$(WINDOWS_INNER_ARG)*.cpp
+	@IF NOT EXIST "$@\..\" MD "$@\..\"
+	@ECHO Building directory $(PROJ_OBJ_DIR)$(BUILD_NAME)\x$(ARCH)\$(WINDOWS_INNER_ARG)*.obj...
+	@$(COMPILER) $(COMPILER_FLAGS) $(COMPILER_FLAGS_PCH)\
+		/Fd$(PROJ_OBJ_DIR)$(BUILD_NAME)\x$(ARCH)\$(BIN_NAME).pdb\
+		/Fo$(PROJ_OBJ_DIR)$(BUILD_NAME)\x$(ARCH)\$(WINDOWS_INNER_ARG) \
+		$?
+	@TYPE NUL>$@
+# Secondary build target for files. Need ths proxy variable or the dependency line results in a syntax error.
+WINDOWS_INNER_BUILD_FILE_DEP=$(PROJ_SRC_DIR)$(patsubsti %.obj,%.cpp,$(WINDOWS_INNER_ARG))
+$(PROJ_OBJ_DIR)$(BUILD_NAME)\x$(ARCH)\$(WINDOWS_INNER_ARG): $(WINDOWS_INNER_BUILD_FILE_DEP)
+	@IF NOT EXIST "$@\..\" MD "$@\..\"
+	@ECHO Building file $@...
+	@$(COMPILER) $(COMPILER_FLAGS) $(COMPILER_FLAGS_PCH)\
+		/Fd$(PROJ_OBJ_DIR)$(BUILD_NAME)\x$(ARCH)\$(BIN_NAME).pdb\
+		/Fo$(PROJ_OBJ_DIR)$(BUILD_NAME)\x$(ARCH)\$(WINDOWS_INNER_ARG)\..\ \
+		$?
 
 # Mark source files as out of date if any headers have
 # changed.

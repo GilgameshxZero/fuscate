@@ -22,7 +22,7 @@ FOR /F "delims=" %%I IN ('DIR /B /S /AD ..\include') DO (
 @REM We choose to list explicitly the *.cpp files here as
 @REM they typically number fewer, and is required for the
 @REM compiler.
-SET "PROJ_SRC_WC=..\src\*.cpp"
+SET "PROJ_SRC_WC=..\src\fuscate.cpp"
 FOR /F "delims=" %%I IN ('DIR /B /S /AD ..\src') DO (
 	SET "PROJ_SRC_WC=!PROJ_SRC_WC! %%I\*.cpp"
 )
