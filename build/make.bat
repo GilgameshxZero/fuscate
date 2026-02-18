@@ -1,5 +1,12 @@
 @REM Proxy file that calls nmake with evaluated wildcards.
 @ECHO OFF
+
+@REM Inject nmake if not yet available.
+WHERE nmake >NUL 2>NUL
+IF %ERRORLEVEL% NEQ 0 (
+	CALL "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" x64
+)
+
 SETLOCAL ENABLEDELAYEDEXPANSION
 
 @REM Careful to not exceed the 8192 string limit. We do not
