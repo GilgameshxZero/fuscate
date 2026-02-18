@@ -160,7 +160,8 @@ COMPILER_FLAGS_PCH=
 LINKER_FLAGS_PCH=
 !ELSE
 COMPILER_FLAGS_PCH=/Yu"rain.hpp"
-LINKER_FLAGS_PCH=$(PROJ_OBJ_DIR)$(BUILD_NAME)\x$(ARCH)\pch.obj
+LINKER_FLAGS_PCH=\
+	$(PROJ_OBJ_DIR)$(BUILD_NAME)\x$(ARCH)\pch.obj
 !ENDIF
 
 # Real targets.
@@ -208,7 +209,8 @@ version.build.txt: $(INCL) $(PROJ_SRC)
 	@$(MAKE) /C /T version.build.txt
 # Precompiled headers.
 $(PROJ_OBJ_DIR)$(BUILD_NAME)\x$(ARCH)\pch.pch: pch.cpp
-	@ECHO Building $(PROJ_OBJ_DIR)$(BUILD_NAME)\x$(ARCH)\pch.pch...
+	@ECHO Building\
+		$(PROJ_OBJ_DIR)$(BUILD_NAME)\x$(ARCH)\pch.pch...
 	@IF NOT EXIST $(PROJ_OBJ_DIR) MD $(PROJ_OBJ_DIR)
 	@IF NOT EXIST $(PROJ_OBJ_DIR)$(BUILD_NAME)\
 		MD $(PROJ_OBJ_DIR)$(BUILD_NAME)
@@ -225,8 +227,7 @@ pch.cpp: $(INCL_PCH)
 # Need additional variable to parse dependencies correctly.
 $(PROJ_BIN): $(PROJ_SRC)
 !IF $(PCH)==1
-	@$(MAKE) /C\
-		$(PROJ_OBJ_DIR)$(BUILD_NAME)\x$(ARCH)\pch.pch\
+	@$(MAKE) /C $(PROJ_OBJ_DIR)$(BUILD_NAME)\x$(ARCH)\pch.pch\
 		PROJ=$(PROJ) BIN=$(BIN) SRC="$(SRC)"\
 		BUILD=$(BUILD) ARCH=$(ARCH) PCH=$(PCH)
 !ENDIF
@@ -247,12 +248,11 @@ $(PROJ_BIN): $(PROJ_SRC)
 			CP $(PROJ_OBJ_DIR)$(BUILD_NAME)\x$(ARCH)\pch.idb\
 				$(PROJ_OBJ_DIR)$(BUILD_NAME)\x$(ARCH)\$(BIN_NAME).idb
 !ENDIF
-	@REM Compile all subdirectories separately so as to place
-	@REM object files in the correct relative subdirectory.
-	@REM We use . as a placeholder for wildcards in the
-	@REM project source root.
-	@REM The else case exploits behavior that we can use ..\
-	@REM to ignore the last part of a path in `MD`.
+	@REM Compile all subdirectories (and files) separately so
+	@REM as to place object files in the correct relative
+	@REM subdirectory.
+	@REM Each subdirectory uses its own recursive call and
+	@REM dependency timestamp evaluation.
 	@FOR %%I IN ($(patsubsti %*.obj,"%",\
 		$(patsubsti %.cpp,%.obj,\
 			$(patsubsti $(PROJ_SRC_DIR)\%,%,$(PROJ_SRC))))) DO\
@@ -274,19 +274,27 @@ $(PROJ_BIN): $(PROJ_SRC)
 			$(PROJ_OBJ_DIR)$(BUILD_NAME)\x$(ARCH)\\%,\
 			$**))
 
-# Secondary build target for subdirectories. We are able to use nmake macros again via the recursive call, and also avoid rebuilding unchanged source files.
-# Use a sentinel in the .obj directory to mark the directory as up-to-date. Without the sentinel and using a fake target instead, all dependents are considered out of date.
-$(PROJ_OBJ_DIR)$(BUILD_NAME)\x$(ARCH)\$(WINDOWS_INNER_ARG).sentinel.tmp: $(PROJ_SRC_DIR)$(WINDOWS_INNER_ARG)*.cpp
+# Secondary build target for subdirectories. We are able to
+# use nmake macros again via the recursive call, and also
+# avoid rebuilding unchanged source files.
+# Use a sentinel in the .obj directory to mark the directory
+# as up-to-date. Without the sentinel and using a fake
+# target instead, all dependents are considered out of date.
+$(PROJ_OBJ_DIR)$(BUILD_NAME)\x$(ARCH)\$(WINDOWS_INNER_ARG).sentinel.tmp:\
+	$(PROJ_SRC_DIR)$(WINDOWS_INNER_ARG)*.cpp
 	@IF NOT EXIST "$@\..\" MD "$@\..\"
 	@ECHO Building directory $(PROJ_OBJ_DIR)$(BUILD_NAME)\x$(ARCH)\$(WINDOWS_INNER_ARG)*.obj...
 	@$(COMPILER) $(COMPILER_FLAGS) $(COMPILER_FLAGS_PCH)\
 		/Fd$(PROJ_OBJ_DIR)$(BUILD_NAME)\x$(ARCH)\$(BIN_NAME).pdb\
-		/Fo$(PROJ_OBJ_DIR)$(BUILD_NAME)\x$(ARCH)\$(WINDOWS_INNER_ARG) \
+		/Fo$(PROJ_OBJ_DIR)$(BUILD_NAME)\x$(ARCH)\$(WINDOWS_INNER_ARG)\
 		$?
 	@TYPE NUL>$@
-# Secondary build target for files. Need ths proxy variable or the dependency line results in a syntax error.
-WINDOWS_INNER_BUILD_FILE_DEP=$(PROJ_SRC_DIR)$(patsubsti %.obj,%.cpp,$(WINDOWS_INNER_ARG))
-$(PROJ_OBJ_DIR)$(BUILD_NAME)\x$(ARCH)\$(WINDOWS_INNER_ARG): $(WINDOWS_INNER_BUILD_FILE_DEP)
+# Secondary build target for files. Need ths proxy variable\
+# or the dependency line results in a syntax error.
+WINDOWS_INNER_BUILD_FILE_DEP=$(PROJ_SRC_DIR)$(patsubsti \
+	%.obj,%.cpp,$(WINDOWS_INNER_ARG))
+$(PROJ_OBJ_DIR)$(BUILD_NAME)\x$(ARCH)\$(WINDOWS_INNER_ARG):\
+	$(WINDOWS_INNER_BUILD_FILE_DEP)
 	@IF NOT EXIST "$@\..\" MD "$@\..\"
 	@ECHO Building file $@...
 	@$(COMPILER) $(COMPILER_FLAGS) $(COMPILER_FLAGS_PCH)\

@@ -22,7 +22,7 @@
 			"group": { "kind": "build", "isDefault": true },
 
 			"command": "make",
-			"args": ["-j8"],
+			"args": ["-j"],
 			"problemMatcher": ["$gcc"],
 			"windows": { "args": [], "problemMatcher": ["$msCompile"] }
 		},
@@ -37,7 +37,7 @@
 			"group": "build",
 
 			"command": "make",
-			"args": ["-j8", "BUILD=1"],
+			"args": ["-j", "BUILD=1"],
 			"problemMatcher": ["$gcc"],
 			"windows": { "args": ["BUILD=1"], "problemMatcher": ["$msCompile"] }
 		}

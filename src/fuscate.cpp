@@ -1,10 +1,13 @@
+#include <memory>
 #include <rain.hpp>
 
 #include <fuscate.hpp>
 
+#include <client_mode/server.hpp>
 #include <server_mode/server.hpp>
 
 #include "../build/version.hpp"
+#include "rain/networking/socket.hpp"
 
 int main(int argc, char const *argv[]) {
 	return Rain::Error::consumeThrowable(
@@ -59,10 +62,39 @@ int main(int argc, char const *argv[]) {
 				return -1;
 			}
 
+			std::unique_ptr<Rain::Networking::SocketInterface>
+				server;
 			if (isServerMode) {
 				Fuscate::ServerMode::server();
+			} else {
+				Fuscate::ClientMode::server();
 			}
 
+			std::cout << "Listening to commands..." << std::endl;
+			std::string command;
+			while (true) {
+				std::getline(std::cin, command);
+				Rain::String::toLower(
+					Rain::String::trimWhitespace(command));
+				if (command == "help") {
+					std::cout
+						<< "Command options:\n"
+						<< "help: Display this help message.\n"
+						<< "exit: Attempt graceful shutdown and exit.\n"
+						<< std::endl;
+				} else if (command == "exit") {
+					break;
+				} else {
+					std::cout << "Invalid command: " << command << '.'
+										<< std::endl;
+				}
+			}
+
+			// Attempt graceful close.
+			std::cout << "Attempting graceful close of server..."
+								<< std::endl;
+			server.reset();
+			std::cout << "Gracefully closed server." << std::endl;
 			return 0;
 		},
 		RAIN_ERROR_LOCATION)();
